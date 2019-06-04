@@ -1,103 +1,76 @@
 package com.zendev.jetpacksample.view.ui.repodetail
 
-import android.content.Context
-import android.net.Uri
+import android.graphics.Bitmap
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.fragment.app.Fragment
 import com.zendev.jetpacksample.R
+import kotlinx.android.synthetic.main.fragment_repo_detail.*
+import org.jetbrains.anko.sdk27.coroutines.onClick
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Activities that contain this fragment must implement the
- * [RepoDetailFragment.OnFragmentInteractionListener] interface
- * to handle interaction events.
- * Use the [RepoDetailFragment.newInstance] factory method to
- * create an instance of this fragment.
- *
- */
 class RepoDetailFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-    private var listener: OnFragmentInteractionListener? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_repo_detail, container, false)
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    fun onButtonPressed(uri: Uri) {
-        listener?.onFragmentInteraction(uri)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val url = arguments?.let { RepoDetailFragmentArgs.fromBundle(it).url }
+
+        setupWebView()
+        setClickListeners()
+
+        repo_web_view.loadUrl(url)
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is OnFragmentInteractionListener) {
-            listener = context
-        } else {
-            throw RuntimeException(context.toString() + " must implement OnFragmentInteractionListener")
+    private fun setClickListeners() {
+        repo_back_button.onClick {
+            repo_web_view.goBack()
+        }
+
+        repo_forward_button.onClick {
+            repo_web_view.goForward()
+        }
+
+        repo_refresh_button.onClick {
+            repo_web_view.reload()
         }
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
+    private fun setupWebView() {
+        repo_web_view.setInitialScale(1)
+        val webSettings = repo_web_view.settings
+        webSettings.setAppCacheEnabled(false)
+        webSettings.builtInZoomControls = true
+        webSettings.displayZoomControls = false
+        webSettings.javaScriptEnabled = true
+        webSettings.useWideViewPort = true
+        webSettings.domStorageEnabled = true
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     *
-     *
-     * See the Android Training lesson [Communicating with Other Fragments]
-     * (http://developer.android.com/training/basics/fragments/communicating.html)
-     * for more information.
-     */
-    interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        fun onFragmentInteraction(uri: Uri)
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment RepoDetailFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            RepoDetailFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+        repo_web_view.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                if (repo_back_button != null && repo_forward_button != null && repo_web_view != null && repo_progress_view != null) {
+                    repo_back_button.isEnabled = repo_web_view.canGoBack()
+                    repo_forward_button.isEnabled = repo_web_view.canGoForward()
+                    repo_progress_view.visibility = View.VISIBLE
                 }
             }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                if (repo_back_button != null && repo_forward_button != null && repo_web_view != null && repo_progress_view != null) {
+                    repo_back_button.isEnabled = repo_web_view.canGoBack()
+                    repo_forward_button.isEnabled = repo_web_view.canGoForward()
+                    repo_progress_view.visibility = View.GONE
+                }
+            }
+        }
     }
 }
